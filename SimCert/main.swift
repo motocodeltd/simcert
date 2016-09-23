@@ -12,7 +12,7 @@ import Foundation
 let UUIDArgument = "-uuid";
 let CertificateArgument = "-certificate";
 
-var args  = NSProcessInfo().arguments
+var args  = ProcessInfo().arguments
 
 //!MARK: - Helpers
 
@@ -21,17 +21,17 @@ func printUsage() {
 }
 
 
-func getArgumentWithOption(opt: String) -> String? {
+func getArgumentWithOption(_ opt: String) -> String? {
     
-    if let index = args.indexOf(opt) where args.count >= (index + 1) {
+    if let index = args.index(of: opt) , args.count >= (index + 1) {
         return args[index + 1];
     }
     return nil;
 }
 
-func getArgumentListWithOption(opt: String) -> [String] {
+func getArgumentListWithOption(_ opt: String) -> [String] {
     
-    if let index = args.indexOf(opt) where args.count >= (index + 1) {
+    if let index = args.index(of: opt) , args.count >= (index + 1) {
         return Array(args[index+1..<args.count])
     }
     return [];
@@ -39,28 +39,31 @@ func getArgumentListWithOption(opt: String) -> [String] {
 
 
 //!MARK: - Installation
-func install(uuidString: String, paths: [String]){
+func install(_ uuidString: String, paths: [String]){
     
-    guard let UUID = NSUUID(UUIDString: uuidString) else {
+    guard let UUID = UUID(uuidString: uuidString) else {
         
         print("Invalid UUID parameters")
         return
     }
     
     
-    let URLs = paths.map( { (var filePath) -> String? in
-        if filePath.containsString("~"){
-            filePath = (filePath as NSString).stringByExpandingTildeInPath
+    let URLs = paths.map( { (filePath) -> String? in
+        let path: String
+        if filePath.contains("~"){
+            path = (filePath as NSString).expandingTildeInPath
+        } else {
+            path = filePath
         }
         
-        if !NSFileManager.defaultManager().fileExistsAtPath(filePath) {
+        if !FileManager.default.fileExists(atPath: path) {
             print("Invalid path");
             return nil
         } else {
-            return filePath
+            return path
         }
         
-    }).flatMap { $0 }.map { NSURL(fileURLWithPath: $0) }
+    }).flatMap { $0 }.map { URL(fileURLWithPath: $0) }
     
     let installer = SimulatorInstaller(uuid: UUID, certificates: URLs)
     
@@ -72,9 +75,9 @@ func install(uuidString: String, paths: [String]){
 //!MARK: - Main
 
 let value = kAXTrustedCheckOptionPrompt.takeUnretainedValue()
-let options: [String:AnyObject] = [value as String: (true as CFBooleanRef)]
+let options: [String:AnyObject] = [value as String: (true as CFBoolean)]
 
-if(!AXIsProcessTrustedWithOptions(options)){
+if(!AXIsProcessTrustedWithOptions(options as CFDictionary?)){
     
     print("You need to give access to accessibility API")
     exit(1)

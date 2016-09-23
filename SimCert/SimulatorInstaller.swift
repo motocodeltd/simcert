@@ -11,23 +11,23 @@ import Foundation
 class SimulatorInstaller {
     
     static let WAIT_STEP_SEC = 10.0
-    static let deltaTime = dispatch_time(DISPATCH_TIME_NOW, Int64(SimulatorInstaller.WAIT_STEP_SEC * Double(NSEC_PER_SEC)))
+    static let deltaTime = DispatchTime.now() + Double(Int64(SimulatorInstaller.WAIT_STEP_SEC * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
 
-    let UUID: NSUUID
-    let certificatesURLs: [NSURL]
+    let UUID: Foundation.UUID
+    let certificatesURLs: [URL]
     
     var simulatorWindow: SimulatorWindow?
     
     let analyzer = ElementsAnalyzer()
     
-    init(uuid:NSUUID, certificates: [NSURL]){
+    init(uuid:Foundation.UUID, certificates: [URL]){
         self.UUID = uuid
         self.certificatesURLs = certificates
     }
  
     
     func install(){
-            print("=== Start installing \(self.UUID.UUIDString) with \(self.certificatesURLs)")
+            print("=== Start installing \(self.UUID.uuidString) with \(self.certificatesURLs)")
         
             startSimulator()
             for certURL in self.certificatesURLs {
@@ -39,25 +39,25 @@ class SimulatorInstaller {
 
     func startSimulator(){
         
-        let task = NSTask()
+        let task = Process()
         task.launchPath = "/usr/bin/open"
-        task.arguments = ["-a",  "Simulator",  "--args",  "-CurrentDeviceUDID", self.UUID.UUIDString]
+        task.arguments = ["-a",  "Simulator",  "--args",  "-CurrentDeviceUDID", self.UUID.uuidString]
         task.launch()
         task.waitUntilExit()
         
         print("Start Simulator Termination: \(task.terminationStatus)")
         
-        NSThread.sleepForTimeInterval(15.0)
+        Thread.sleep(forTimeInterval: 15.0)
         simulatorWindow = self.analyzer.simulatorWindows()[0]
         print("Windows:\(simulatorWindow)")
 
     }
     
-    func openURL(certificateURL: NSURL){
+    func openURL(_ certificateURL: URL){
         
-        NSThread.sleepForTimeInterval(5.0)
+        Thread.sleep(forTimeInterval: 5.0)
         
-        let task = NSTask()
+        let task = Process()
         task.launchPath = "/usr/bin/xcrun"
         task.arguments = ["simctl", "openurl", "booted", certificateURL.absoluteString]
         task.launch()
@@ -72,32 +72,32 @@ class SimulatorInstaller {
         let op = SimulatorOperator(simulator: simulatorWindow)
         
         // First Install
-        NSThread.sleepForTimeInterval(5.0)
+        Thread.sleep(forTimeInterval: 5.0)
         print("=== First Page ")
         op.searchButtonAndClick("Install")
-        NSThread.sleepForTimeInterval(1.0) //Don't know why but needs to be done two times OR start the simulator first
+        Thread.sleep(forTimeInterval: 1.0) //Don't know why but needs to be done two times OR start the simulator first
         op.searchButtonAndClick("Install")
         
-        NSThread.sleepForTimeInterval(5.0)
+        Thread.sleep(forTimeInterval: 5.0)
         print("=== Second Page ")
         op.searchButtonAndClick("Install")
         
         // Need to be done two time
-        NSThread.sleepForTimeInterval(5.0)
+        Thread.sleep(forTimeInterval: 5.0)
         //actor.searchButtonAndClick("Install")
         print("=== Popup Page ")
         op.searchButtonAndClickQuartzCore("Install")
         
-        NSThread.sleepForTimeInterval(5.0)
+        Thread.sleep(forTimeInterval: 5.0)
         print("=== Done Page ")
         op.searchButtonAndClick("Done")
 
-        NSThread.sleepForTimeInterval(3.0)
+        Thread.sleep(forTimeInterval: 3.0)
     }
     
     func closeSimulator() {
         
-        let task = NSTask()
+        let task = Process()
         task.launchPath = "/usr/bin/osascript"
         task.arguments = ["-e", "quit app \"Simulator\""]
         task.launch()
